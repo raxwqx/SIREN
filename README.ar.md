@@ -9,7 +9,7 @@
 ╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝
 ```
 
-### 🚨 قنوات DNS الخفية — مقيسة.
+###  قنوات DNS الخفية — مقيسة.
 
 **يقرأ SIREN حركة DNS، ويستخرج سمات سلوكية، ويقيّم كل حزمة (عميل، نطاق، نافذة
 زمنية) بثمانية كواشف قابلة للتفسير — ثم يثبت مدى جودة عمله.**
@@ -52,7 +52,7 @@ DNS هو البروتوكول الوحيد الذي تسمح به معظم ال�
 
 ---
 
-## 🖥️ عرض توضيحي
+##  عرض توضيحي
 
 ```console
 $ siren analyze capture.pcap --window 300 --explain
@@ -96,7 +96,7 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ## 📦 التثبيت
 
-### 🧰 المتطلبات
+###  المتطلبات
 
 - 🦀 Rust **1.75+** (يُنصح بـ `rustup`)
 - 🪶 بلا libpcap، بلا Npcap، بلا root
@@ -116,7 +116,7 @@ cargo build --release
 sudo install -m 0755 target/release/siren /usr/local/bin/siren
 ```
 
-### 🪟 Windows (PowerShell)
+###  Windows (PowerShell)
 
 ```powershell
 git clone https://github.com/raxwqx/SIREN.git
@@ -284,7 +284,7 @@ siren signals
 
 ---
 
-## 📥 صيغ الإدخال
+##  صيغ الإدخال
 
 ### PCAP
 
