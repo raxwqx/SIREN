@@ -314,7 +314,7 @@ Add `"label": 0|1` to events to run `siren eval` on your own ground truth.
 
 ---
 
-## 📤 Output formats
+##  Output formats
 
 | Format | Use case |
 |---|---|
