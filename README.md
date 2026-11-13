@@ -9,7 +9,7 @@
 ╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝
 ```
 
-### 🚨 DNS covert channels, measured.
+###  DNS covert channels, measured.
 
 **SIREN reads DNS traffic, extracts behavioural features, and scores every
 (client, domain, time window) bucket with eight explainable detectors — then
@@ -52,7 +52,7 @@ SIREN is built the other way around:
 
 ---
 
-## 🖥️ Demo
+##  Demo
 
 ```console
 $ siren analyze capture.pcap --window 300 --explain
@@ -97,7 +97,7 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ## 📦 Install
 
-### 🧰 Requirements
+###  Requirements
 
 - 🦀 Rust **1.75+** (`rustup` recommended)
 - 🪶 No libpcap, no Npcap, no root
@@ -117,7 +117,7 @@ Install globally:
 sudo install -m 0755 target/release/siren /usr/local/bin/siren
 ```
 
-### 🪟 Windows (PowerShell)
+###  Windows (PowerShell)
 
 ```powershell
 git clone https://github.com/raxwqx/SIREN.git
