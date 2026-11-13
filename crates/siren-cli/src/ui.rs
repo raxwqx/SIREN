@@ -112,13 +112,13 @@ impl Ui {
             self.paint("╮", BLUE)
         );
         for (key, value) in rows {
-            let key = truncate(key, 17);
-            let value = truncate(value, 40);
+            // Pad before colouring: ANSI escapes are zero-width, so a width
+            // spec applied to an already-coloured string collapses the column.
             println!(
-                "{} {:<17} {:<40} {}",
+                "{} {} {} {}",
                 self.paint("│", BLUE),
-                self.dim(&key),
-                value,
+                self.dim(&cell(key, 17)),
+                cell(value, 40),
                 self.paint("│", BLUE)
             );
         }
@@ -282,11 +282,12 @@ impl Ui {
             "SIGNAL", "WEIGHT", "MITRE"
         );
         for detector in DETECTORS {
+            // Same rule as the panel: pad first, then colour.
             println!(
-                "  {:<14} {:>6.2}  {:<18} {}",
-                self.paint(detector.id, BLUE),
+                "  {} {:>6.2}  {} {}",
+                self.paint(&cell(detector.id, 14), BLUE),
                 detector.weight,
-                self.paint(&detector.mitre.join(","), YELLOW),
+                self.paint(&cell(&detector.mitre.join(","), 18), YELLOW),
                 detector.description
             );
         }
@@ -366,4 +367,45 @@ fn truncate(text: &str, max: usize) -> String {
     let mut out: String = text.chars().take(max.saturating_sub(1)).collect();
     out.push('…');
     out
+}
+
+/// A left-aligned cell of exactly `width` characters. Callers colour the
+/// result *after* padding, never before: ANSI escapes are zero-width, so a
+/// width spec applied to a coloured string silently collapses the column.
+fn cell(text: &str, width: usize) -> String {
+    format!("{:<width$}", truncate(text, width), width = width)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cells_are_exactly_the_requested_width() {
+        assert_eq!(cell("input", 17).chars().count(), 17);
+        assert_eq!(cell("", 5).chars().count(), 5);
+        assert_eq!(cell("exactly-17-chars!", 17).chars().count(), 17);
+        assert_eq!(cell("far-too-long-for-the-column", 17).chars().count(), 17);
+        assert!(cell("far-too-long-for-the-column", 17).ends_with('…'));
+    }
+
+    #[test]
+    fn severity_ranking_is_ordered() {
+        assert!(rank("critical") > rank("high"));
+        assert!(rank("high") > rank("medium"));
+        assert!(rank("medium") > rank("low"));
+        assert!(rank("low") > rank("info"));
+        assert_eq!(rank("nonsense"), 0);
+    }
+
+    #[test]
+    fn severity_colours_are_distinct() {
+        let critical = severity_color("critical");
+        let high = severity_color("high");
+        let medium = severity_color("medium");
+        let low = severity_color("low");
+        assert_ne!(critical, high);
+        assert_ne!(high, medium);
+        assert_ne!(medium, low);
+    }
 }
