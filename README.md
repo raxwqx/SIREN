@@ -9,7 +9,7 @@
 ╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝
 ```
 
-### DNS covert channels, measured.
+### 🚨 DNS covert channels, measured.
 
 **SIREN reads DNS traffic, extracts behavioural features, and scores every
 (client, domain, time window) bucket with eight explainable detectors — then
@@ -22,13 +22,13 @@ proves how well it does.**
 ![Precision](https://img.shields.io/badge/precision-0.99-ff4866)
 ![Recall](https://img.shields.io/badge/recall-0.93-58a6ff)
 
-**English** · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [العربية](README.ar.md)
+🇬🇧 **English** · 🇹🇷 [Türkçe](README.tr.md) · 🇷🇺 [Русский](README.ru.md) · 🇸🇦 [العربية](README.ar.md)
 
 </div>
 
 ---
 
-## Why SIREN exists
+## 🎯 Why SIREN exists
 
 DNS is the one protocol almost every network lets out of the building, which is
 exactly why it is used to tunnel data out. Most public "DNS exfiltration
@@ -37,22 +37,22 @@ truth, no idea whether they work.
 
 SIREN is built the other way around:
 
-- **Explainable by construction.** Every alert lists the signals that fired,
+- 🔍 **Explainable by construction.** Every alert lists the signals that fired,
   with the measured value and the threshold it crossed.
-- **Corroboration, not vibes.** One strong signal alone cannot produce a high
+- 🧩 **Corroboration, not vibes.** One strong signal alone cannot produce a high
   verdict; weights are designed so a verdict needs several independent signals.
-- **Measured, not claimed.** A deterministic generator creates labeled traffic
+- 📊 **Measured, not claimed.** A deterministic generator creates labeled traffic
   and `siren eval` reports precision, recall, F1 and FPR across thresholds.
   Every number in this README can be reproduced with two commands.
-- **No native dependencies.** The PCAP reader and DNS parser are pure Rust — no
+- 🪶 **No native dependencies.** The PCAP reader and DNS parser are pure Rust — no
   libpcap, no Npcap, no root. It runs the same on Linux, Windows and macOS.
 
-> SIREN is a detection and analysis tool. It does not sit inline and it does not
+> ⚠️ SIREN is a detection and analysis tool. It does not sit inline and it does not
 > block traffic.
 
 ---
 
-## Demo
+## 🖥️ Demo
 
 ```console
 $ siren analyze capture.pcap --window 300 --explain
@@ -95,14 +95,14 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ---
 
-## Install
+## 📦 Install
 
-### Requirements
+### 🧰 Requirements
 
-- Rust **1.75+** (`rustup` recommended)
-- No libpcap, no Npcap, no root
+- 🦀 Rust **1.75+** (`rustup` recommended)
+- 🪶 No libpcap, no Npcap, no root
 
-### Linux / macOS
+### 🐧 Linux / macOS
 
 ```bash
 git clone https://github.com/raxwqx/SIREN.git
@@ -117,7 +117,7 @@ Install globally:
 sudo install -m 0755 target/release/siren /usr/local/bin/siren
 ```
 
-### Windows (PowerShell)
+### 🪟 Windows (PowerShell)
 
 ```powershell
 git clone https://github.com/raxwqx/SIREN.git
@@ -136,7 +136,7 @@ siren --version
 > Windows Terminal (or any terminal with VT support) shows the coloured output.
 > When stdout is redirected, SIREN automatically falls back to plain text.
 
-### Build from crates.io (coming soon)
+### 📦 Build from crates.io (coming soon)
 
 ```bash
 cargo install siren-cli
@@ -144,7 +144,7 @@ cargo install siren-cli
 
 ---
 
-## Quick start
+## ⚡ Quick start
 
 ```bash
 # 1. analyze a capture
@@ -170,7 +170,7 @@ siren eval data/eval.jsonl --window 300
 
 ---
 
-## How it works
+## 🧠 How it works
 
 ```text
    PCAP / PCAPNG*            JSONL logs
@@ -203,9 +203,9 @@ siren eval data/eval.jsonl --window 300
 \* PCAPNG is detected and reported with a one-line conversion hint
 (`editcap -F pcap`). Native PCAPNG is on the roadmap.
 
-### Detection signals
+### 🚦 Detection signals
 
-| Signal | Weight | Fires when | MITRE ATT&CK |
+| 🔍 Signal | ⚖️ Weight | 🚦 Fires when | 🎯 MITRE ATT&CK |
 |---|---:|---|---|
 | `entropy` | 0.20 | mean label entropy **> 4.3 bits/char** | T1001 |
 | `label-length` | 0.16 | any label **> 20 chars** | T1071.004 |
@@ -221,7 +221,7 @@ verdict by design. Run `siren signals` to print this table from the binary.
 
 ---
 
-## Evaluation
+## 📊 Evaluation
 
 SIREN ships with a deterministic traffic generator: ordinary browsing, CDN
 hard-negatives (long hex labels), high-rate telemetry, encoded tunnels (hex,
@@ -236,12 +236,12 @@ siren eval data/eval.jsonl --window 300 --json
 Dataset: **17,719 events**, **96 domains**, seed `42`, threshold chosen by best
 F1 on the sweep.
 
-| Window | Buckets | Positive | Precision | Recall | F1 | FPR |
+| ⏱️ Window | 🗂️ Buckets | ✅ Positive | 🎯 Precision | 🔎 Recall | 🏅 F1 | ⚠️ FPR |
 |---|---:|---:|---:|---:|---:|---:|
 | 60 s | 1,717 | 157 | **1.000** | 0.790 | 0.883 | 0.000 |
 | 300 s | 657 | 98 | **0.989** | **0.929** | **0.958** | 0.002 |
 
-**Read this honestly:** at 60 s the detector is precise but blind to
+💡 **Read this honestly:** at 60 s the detector is precise but blind to
 low-and-slow tunnels — a payload that sends two queries a minute never has
 enough evidence inside a one-minute bucket. Widen the window and recall climbs,
 at the cost of detection latency and one false positive. That trade-off is the
@@ -249,7 +249,7 @@ whole point of exposing a window parameter instead of hard-coding one.
 
 Reproduce it yourself; the generator is seeded and the numbers are stable.
 
-### Performance
+### ⚙️ Performance
 
 | Workload | Events | Time | Throughput |
 |---|---:|---:|---:|
@@ -261,7 +261,7 @@ bottleneck is JSON deserialization, which is on the list for v0.2.
 
 ---
 
-## CLI reference
+## 🛠️ CLI reference
 
 ```text
 siren analyze <INPUT> [OPTIONS]
@@ -293,7 +293,7 @@ siren signals
 
 ---
 
-## Input formats
+## 📥 Input formats
 
 ### PCAP
 
@@ -314,7 +314,7 @@ Add `"label": 0|1` to events to run `siren eval` on your own ground truth.
 
 ---
 
-## Output formats
+## 📤 Output formats
 
 | Format | Use case |
 |---|---|
@@ -327,7 +327,7 @@ in `properties`.
 
 ---
 
-## Design decisions
+## 🧩 Design decisions
 
 1. **Windows first-class.** A pure-Rust parser means no Npcap install and no
    admin prompt. The same binary works on Windows, Linux and macOS.
@@ -342,7 +342,7 @@ in `properties`.
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
 - [ ] Streaming PCAP (constant memory for multi-GB captures)
 - [ ] Native PCAPNG reader
@@ -357,7 +357,7 @@ in `properties`.
 
 ---
 
-## FAQ
+## ❓ FAQ
 
 **Is this an IDS?**
 No. It is an offline analyser and detection engine. It reads traffic; it does not
@@ -383,7 +383,7 @@ labels are the next step — and the `eval` command exists precisely for that.
 
 ---
 
-## Legal
+## ⚖️ Legal
 
 Use SIREN only on traffic you own or are explicitly authorised to analyse.
 Capturing other people's traffic without permission is illegal in most
@@ -391,7 +391,7 @@ jurisdictions. The author assumes no liability for misuse.
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 ```bash
 cargo fmt --all
@@ -404,6 +404,6 @@ table. PRs that change scoring must include before/after `siren eval` numbers.
 
 ---
 
-## License
+## 📄 License
 
 MIT © 2026 StyxHQ — see [LICENSE](LICENSE).

@@ -9,7 +9,7 @@
 ╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝
 ```
 
-### DNS gizli kanalları, ölçülerek.
+### 🚨 DNS gizli kanalları, ölçülerek.
 
 **SIREN DNS trafiğini okur, davranışsal özellikler çıkarır ve her
 (istemci, alan adı, zaman penceresi) kutusunu sekiz açıklanabilir dedektörle
@@ -22,13 +22,13 @@ puanlar — sonra bunun ne kadar iyi çalıştığını kanıtlar.**
 ![Precision](https://img.shields.io/badge/precision-0.99-ff4866)
 ![Recall](https://img.shields.io/badge/recall-0.93-58a6ff)
 
-[English](README.md) · **Türkçe** · [Русский](README.ru.md) · [العربية](README.ar.md)
+🇬🇧 [English](README.md) · 🇹🇷 **Türkçe** · 🇷🇺 [Русский](README.ru.md) · 🇸🇦 [العربية](README.ar.md)
 
 </div>
 
 ---
 
-## SIREN neden var?
+## 🎯 SIREN neden var?
 
 DNS, neredeyse her ağın dışarı çıkmasına izin verdiği tek protokol — bu yüzden
 veri kaçırmak için tam da onu kullanıyorlar. Halka açık "DNS exfiltration
@@ -37,22 +37,22 @@ script'i: test yok, ground truth yok, çalışıp çalışmadığına dair fikir
 
 SIREN bunun tersini yapar:
 
-- **Yapısı gereği açıklanabilir.** Her alarm, hangi sinyallerin tetiklendiğini,
+- 🔍 **Yapısı gereği açıklanabilir.** Her alarm, hangi sinyallerin tetiklendiğini,
   ölçülen değeri ve aşılan eşiği gösterir.
-- **Sezgi değil, korelasyon.** Tek başına güçlü bir sinyal yüksek bir hüküm
+- 🧩 **Sezgi değil, korelasyon.** Tek başına güçlü bir sinyal yüksek bir hüküm
   üretemez; ağırlıklar bir hükmün birkaç bağımsız sinyal gerektirmesi için
   tasarlandı.
-- **İddia değil, ölçüm.** Deterministik üretici etiketli trafik oluşturur ve
+- 📊 **İddia değil, ölçüm.** Deterministik üretici etiketli trafik oluşturur ve
   `siren eval` eşikler arasında precision, recall, F1 ve FPR raporlar. Bu
   README'deki her sayı iki komutla tekrar üretilebilir.
-- **Yerel kütüphane bağımlılığı yok.** PCAP okuyucu ve DNS ayrıştırıcı saf Rust — libpcap
+- 🪶 **Yerel kütüphane bağımlılığı yok.** PCAP okuyucu ve DNS ayrıştırıcı saf Rust — libpcap
   yok, Npcap yok, root yok. Linux, Windows ve macOS'ta aynı çalışır.
 
-> SIREN bir tespit ve analiz aracıdır. Hattın üstünde durmaz, trafiği engellemez.
+> ⚠️ SIREN bir tespit ve analiz aracıdır. Hattın üstünde durmaz, trafiği engellemez.
 
 ---
 
-## Demo
+## 🖥️ Demo
 
 ```console
 $ siren analyze capture.pcap --window 300 --explain
@@ -94,14 +94,14 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ---
 
-## Kurulum
+## 📦 Kurulum
 
-### Gereksinimler
+### 🧰 Gereksinimler
 
-- Rust **1.75+** (`rustup` önerilir)
-- libpcap yok, Npcap yok, root yok
+- 🦀 Rust **1.75+** (`rustup` önerilir)
+- 🪶 libpcap yok, Npcap yok, root yok
 
-### Linux / macOS
+### 🐧 Linux / macOS
 
 ```bash
 git clone https://github.com/raxwqx/SIREN.git
@@ -116,7 +116,7 @@ Sisteme kur:
 sudo install -m 0755 target/release/siren /usr/local/bin/siren
 ```
 
-### Windows (PowerShell)
+### 🪟 Windows (PowerShell)
 
 ```powershell
 git clone https://github.com/raxwqx/SIREN.git
@@ -137,7 +137,7 @@ siren --version
 
 ---
 
-## Hızlı başlangıç
+## ⚡ Hızlı başlangıç
 
 ```bash
 # 1. bir yakalamayı incele
@@ -163,7 +163,7 @@ siren eval data/eval.jsonl --window 300
 
 ---
 
-## Nasıl çalışır?
+## 🧠 Nasıl çalışır?
 
 ```text
    PCAP / PCAPNG*            JSONL logları
@@ -196,9 +196,9 @@ siren eval data/eval.jsonl --window 300
 \* PCAPNG algılanır ve tek satırlık dönüştürme ipucuyla raporlanır
 (`editcap -F pcap`). Yerel PCAPNG desteği yol haritasında.
 
-### Tespit sinyalleri
+### 🚦 Tespit sinyalleri
 
-| Sinyal | Ağırlık | Ne zaman tetiklenir | MITRE ATT&CK |
+| 🔍 Sinyal | ⚖️ Ağırlık | 🚦 Ne zaman tetiklenir | 🎯 MITRE ATT&CK |
 |---|---:|---|---|
 | `entropy` | 0.20 | ortalama etiket entropisi **> 4.3 bit/karakter** | T1001 |
 | `label-length` | 0.16 | herhangi bir etiket **> 20 karakter** | T1071.004 |
@@ -214,7 +214,7 @@ yüksek bir hükme ulaşamaz. Tabloyu binary'den yazdırmak için `siren signals
 
 ---
 
-## Değerlendirme
+## 📊 Değerlendirme
 
 SIREN deterministik bir trafik üreticisi ile gelir: sıradan gezinme, CDN
 hard-negative'leri (uzun hex etiketler), yüksek hızlı telemetri, kodlanmış
@@ -230,12 +230,12 @@ siren eval data/eval.jsonl --window 300 --json
 Veri kümesi: **17.719 olay**, **96 alan adı**, seed `42`, eşik sweep'te en iyi
 F1'e göre seçilir.
 
-| Pencere | Kova | Pozitif | Precision | Recall | F1 | FPR |
+| ⏱️ Pencere | 🗂️ Kova | ✅ Pozitif | 🎯 Precision | 🔎 Recall | 🏅 F1 | ⚠️ FPR |
 |---|---:|---:|---:|---:|---:|---:|
 | 60 sn | 1.717 | 157 | **1.000** | 0.790 | 0.883 | 0.000 |
 | 300 sn | 657 | 98 | **0.989** | **0.929** | **0.958** | 0.002 |
 
-**Dürüst oku:** 60 sn'de dedektör keskin ama yavaş tünellere kör — dakikada iki
+💡 **Dürüst oku:** 60 sn'de dedektör keskin ama yavaş tünellere kör — dakikada iki
 sorgu gönderen bir yük, bir dakikalık kovada asla yeterli kanıt bırakmaz.
 Pencereyi genişletince recall yükselir; karşılığında tespit gecikmesi ve bir
 yanlış pozitif gelir. Pencereyi sabitlemek yerine parametre yapmanın sebebi tam
@@ -243,7 +243,7 @@ olarak bu denge.
 
 Kendin üret; üretici seed'li ve sayılar sabit.
 
-### Performans
+### ⚙️ Performans
 
 | İş yükü | Olay | Süre | Hız |
 |---|---:|---:|---:|
@@ -254,7 +254,7 @@ Tek çekirdek, SIMD yok, unsafe yok.
 
 ---
 
-## CLI referansı
+## 🛠️ CLI referansı
 
 ```text
 siren analyze <GİRDİ> [SEÇENEKLER]
@@ -286,7 +286,7 @@ siren signals
 
 ---
 
-## Girdi biçimleri
+## 📥 Girdi biçimleri
 
 ### PCAP
 
@@ -308,7 +308,7 @@ ekle.
 
 ---
 
-## Çıktı biçimleri
+## 📤 Çıktı biçimleri
 
 | Biçim | Kullanım |
 |---|---|
@@ -321,7 +321,7 @@ SARIF bulguları istemci, alan adı, risk, sinyal listesi ve MITRE tekniklerini
 
 ---
 
-## Tasarım kararları
+## 🧩 Tasarım kararları
 
 1. **Windows birinci sınıf.** Saf Rust ayrıştırıcı, Npcap kurulumu ve yönetici
    izni gerektirmez. Aynı binary Windows, Linux ve macOS'ta çalışır.
@@ -336,7 +336,7 @@ SARIF bulguları istemci, alan adı, risk, sinyal listesi ve MITRE tekniklerini
 
 ---
 
-## Yol haritası
+## 🗺️ Yol haritası
 
 - [ ] Akışlı PCAP (çok GB'lık yakalamalar için sabit bellek)
 - [ ] Yerel PCAPNG okuyucu
@@ -351,7 +351,7 @@ SARIF bulguları istemci, alan adı, risk, sinyal listesi ve MITRE tekniklerini
 
 ---
 
-## SSS
+## ❓ SSS
 
 **Bu bir IDS mi?**
 Hayır. Çevrimdışı analizör ve tespit motoru. Trafiği okur; hatta durmaz,
@@ -377,7 +377,7 @@ bir sonraki adım — `eval` komutu tam bunun için var.
 
 ---
 
-## Yasal
+## ⚖️ Yasal
 
 SIREN'i yalnızca sahibi olduğun veya analiz için açık iznin bulunan trafikte
 kullan. Başkalarının trafiğini izinsiz yakalamak çoğu ülkede suçtur. Yazar
@@ -385,7 +385,7 @@ kötüye kullanımdan sorumluluk kabul etmez.
 
 ---
 
-## Katkı
+## 🤝 Katkı
 
 ```bash
 cargo fmt --all
@@ -398,6 +398,6 @@ Puanlamayı değiştiren PR'lar öncesi/sonrası `siren eval` sayılarını içe
 
 ---
 
-## Lisans
+## 📄 Lisans
 
 MIT © 2026 StyxHQ — bkz. [LICENSE](LICENSE).
