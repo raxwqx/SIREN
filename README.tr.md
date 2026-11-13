@@ -9,7 +9,7 @@
 ╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝
 ```
 
-### 🚨 DNS gizli kanalları, ölçülerek.
+###  DNS gizli kanalları, ölçülerek.
 
 **SIREN DNS trafiğini okur, davranışsal özellikler çıkarır ve her
 (istemci, alan adı, zaman penceresi) kutusunu sekiz açıklanabilir dedektörle
@@ -52,7 +52,7 @@ SIREN bunun tersini yapar:
 
 ---
 
-## 🖥️ Demo
+##  Demo
 
 ```console
 $ siren analyze capture.pcap --window 300 --explain
@@ -96,7 +96,7 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ## 📦 Kurulum
 
-### 🧰 Gereksinimler
+###  Gereksinimler
 
 - 🦀 Rust **1.75+** (`rustup` önerilir)
 - 🪶 libpcap yok, Npcap yok, root yok
@@ -116,7 +116,7 @@ Sisteme kur:
 sudo install -m 0755 target/release/siren /usr/local/bin/siren
 ```
 
-### 🪟 Windows (PowerShell)
+###  Windows (PowerShell)
 
 ```powershell
 git clone https://github.com/raxwqx/SIREN.git
@@ -286,7 +286,7 @@ siren signals
 
 ---
 
-## 📥 Girdi biçimleri
+##  Girdi biçimleri
 
 ### PCAP
 
