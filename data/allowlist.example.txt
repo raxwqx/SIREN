@@ -1,0 +1,9 @@
+# SIREN allowlist — one registrable domain per line.
+# Lines starting with # are ignored. Subdomains match automatically.
+#
+# Use this for domains you know are noisy-but-benign in your environment,
+# e.g. telemetry endpoints or CDN zones.
+
+github.com
+microsoft.com
+cloudflare.com

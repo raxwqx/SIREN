@@ -1,0 +1,12 @@
+/target
+**/*.rs.bk
+
+# captures and local outputs
+*.pcap
+*.pcapng
+*.sarif
+findings.json
+data/private/
+
+# keep the reproducible evaluation set
+!data/eval.jsonl
