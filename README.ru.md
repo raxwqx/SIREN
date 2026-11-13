@@ -9,7 +9,7 @@
 ╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝
 ```
 
-### 🚨 Скрытые каналы DNS — с измерениями.
+###  Скрытые каналы DNS — с измерениями.
 
 **SIREN читает DNS-трафик, извлекает поведенческие признаки и оценивает каждый
 блок (клиент, домен, временное окно) восемью объяснимыми детекторами — а затем
@@ -53,7 +53,7 @@ SIREN устроен наоборот:
 
 ---
 
-## 🖥️ Демо
+##  Демо
 
 ```console
 $ siren analyze capture.pcap --window 300 --explain
@@ -97,7 +97,7 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ## 📦 Установка
 
-### 🧰 Требования
+###  Требования
 
 - 🦀 Rust **1.75+** (рекомендуется `rustup`)
 - 🪶 Без libpcap, без Npcap, без root
@@ -117,7 +117,7 @@ cargo build --release
 sudo install -m 0755 target/release/siren /usr/local/bin/siren
 ```
 
-### 🪟 Windows (PowerShell)
+###  Windows (PowerShell)
 
 ```powershell
 git clone https://github.com/raxwqx/SIREN.git
@@ -287,7 +287,7 @@ siren signals
 
 ---
 
-## 📥 Форматы ввода
+##  Форматы ввода
 
 ### PCAP
 
