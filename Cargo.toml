@@ -3,8 +3,9 @@ resolver = "2"
 members = ["crates/siren-core", "crates/siren-cli"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+rust-version = "1.85"
 license = "MIT"
 authors = ["StyxHQ"]
 repository = "https://github.com/raxwqx/SIREN"

@@ -25,13 +25,20 @@ pub fn shannon(s: &str) -> f64 {
 }
 
 fn is_hex(s: &str) -> bool {
-    s.len() >= 8 && s.bytes().all(|b| b.is_ascii_hexdigit())
+    s.len() >= 8
+        && s.bytes().all(|b| b.is_ascii_hexdigit())
+        // Numeric-only labels are usually IDs or phone numbers, not hex
+        // payloads. Requiring a hex letter keeps them out of the encoded set.
+        && s.bytes().any(|b| b.is_ascii_alphabetic())
 }
 
 fn is_base32(s: &str) -> bool {
     s.len() >= 8
         && s.bytes()
             .all(|b| b.is_ascii_uppercase() || (b'2'..=b'7').contains(&b))
+        // Base32 is A-Z and 2-7. Requiring a letter keeps numeric labels such
+        // as "22222222" (phone numbers, IDs) out of the encoded bucket.
+        && s.bytes().any(|b| b.is_ascii_uppercase())
 }
 
 fn is_base64ish(s: &str) -> bool {
@@ -74,7 +81,7 @@ pub fn compute(events: &[DnsEvent], window: f64) -> Features {
     let mut label_count = 0usize;
     let mut entropy_sum = 0.0;
     let mut unique_qnames = HashSet::new();
-    let mut rcode_seen = 0usize;
+    let mut responses = 0usize;
     let mut nxdomain = 0usize;
     let mut txt = 0usize;
     let mut encoded = 0usize;
@@ -94,7 +101,7 @@ pub fn compute(events: &[DnsEvent], window: f64) -> Features {
         unique_qnames.insert(qname.clone());
 
         if let Some(rcode) = event.rcode {
-            rcode_seen += 1;
+            responses += 1;
             if rcode == 3 {
                 nxdomain += 1;
             }
@@ -122,8 +129,9 @@ pub fn compute(events: &[DnsEvent], window: f64) -> Features {
         mean_label_len: label_len_sum as f64 / label_count.max(1) as f64,
         entropy: entropy_sum / n as f64,
         unique_ratio: unique_qnames.len() as f64 / n as f64,
-        nxdomain_ratio: if rcode_seen > 0 {
-            nxdomain as f64 / rcode_seen as f64
+        responses,
+        nxdomain_ratio: if responses > 0 {
+            nxdomain as f64 / responses as f64
         } else {
             0.0
         },
@@ -153,6 +161,10 @@ mod tests {
         assert!(looks_encoded("SGVsbG8gV29ybGQhMTIz"));
         assert!(!looks_encoded("www"));
         assert!(!looks_encoded("api-v2"));
+        // Digits are valid base32 characters, but a numeric-only label is not
+        // an encoded payload.
+        assert!(!looks_encoded("22222222"));
+        assert!(!looks_encoded("12345678"));
     }
 
     fn event(ts: f64, name: &str, qtype: u16, rcode: Option<u8>) -> DnsEvent {
@@ -196,7 +208,20 @@ mod tests {
         ];
         let f = compute(&events, 60.0);
         assert_eq!(f.queries, 3);
+        assert_eq!(f.responses, 2);
         assert!((f.txt_ratio - 2.0 / 3.0).abs() < 1e-9);
         assert!((f.nxdomain_ratio - 0.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn counts_only_matched_responses() {
+        let events = vec![
+            event(0.0, "a.tunnel.net", 1, None),
+            event(1.0, "b.tunnel.net", 1, None),
+            event(2.0, "c.tunnel.net", 1, Some(3)),
+        ];
+        let f = compute(&events, 60.0);
+        assert_eq!(f.responses, 1);
+        assert!((f.nxdomain_ratio - 1.0).abs() < 1e-9);
     }
 }

@@ -15,7 +15,7 @@
 زمنية) بثمانية كواشف قابلة للتفسير — ثم يثبت مدى جودة عمله.**
 
 [![CI](https://github.com/raxwqx/SIREN/actions/workflows/ci.yml/badge.svg)](https://github.com/raxwqx/SIREN/actions/workflows/ci.yml)
-![Rust](https://img.shields.io/badge/rust-1.75%2B-dea584?logo=rust&logoColor=white)
+![Rust](https://img.shields.io/badge/rust-1.85%2B-dea584?logo=rust&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-2b2f3a)
 ![License](https://img.shields.io/badge/license-MIT-3da639)
 ![Precision](https://img.shields.io/badge/precision-0.99-ff4866)
@@ -98,7 +98,7 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ###  المتطلبات
 
-- 🦀 Rust **1.75+** (يُنصح بـ `rustup`)
+- 🦀 Rust **1.85+** (يُنصح بـ `rustup`)
 - 🪶 بلا libpcap، بلا Npcap، بلا root
 
 ### 🐧 Linux / macOS

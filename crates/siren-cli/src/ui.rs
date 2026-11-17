@@ -6,6 +6,7 @@ use crossterm::terminal;
 use siren_core::detect::DETECTORS;
 use siren_core::eval::EvalReport;
 use siren_core::model::Finding;
+use siren_core::summary::{Count, Summary};
 use siren_core::time::fmt_epoch;
 
 const RED: Color = Color::Rgb {
@@ -276,6 +277,47 @@ impl Ui {
         }
     }
 
+    pub fn summary(&self, input: &str, summary: &Summary) {
+        let first = summary
+            .first_ts
+            .map(fmt_epoch)
+            .unwrap_or_else(|| "—".into());
+        let last = summary.last_ts.map(fmt_epoch).unwrap_or_else(|| "—".into());
+        self.panel(
+            "capture summary",
+            &[
+                ("input", input.to_string()),
+                ("queries", format_count(summary.queries)),
+                ("responses", format_count(summary.responses)),
+                ("clients", format_count(summary.clients)),
+                ("domains", format_count(summary.domains)),
+                ("qnames", format_count(summary.unique_qnames)),
+                ("first seen", first),
+                ("last seen", last),
+                ("duration", format_duration(summary.duration_seconds)),
+            ],
+        );
+
+        self.counts_section("top clients", "CLIENT", &summary.top_clients);
+        self.counts_section("top domains", "DOMAIN", &summary.top_domains);
+        self.counts_section("query types", "QTYPE", &summary.qtypes);
+        self.counts_section("response codes", "RCODE", &summary.rcodes);
+        self.hint("next: siren analyze <input> to score these buckets");
+        println!();
+    }
+
+    fn counts_section(&self, title: &str, label: &str, rows: &[Count]) {
+        self.section(title);
+        if rows.is_empty() {
+            println!("  {}", self.dim("none"));
+            return;
+        }
+        println!("  {:>8}  {}", "COUNT", label);
+        for row in rows {
+            println!("  {:>8}  {}", row.count, row.name);
+        }
+    }
+
     pub fn signals_table(&self) {
         println!(
             "  {:<14} {:>6}  {:<18} WHAT IT LOOKS FOR",
@@ -357,6 +399,30 @@ fn mix(a: Color, b: Color, t: f64) -> Color {
         r: lerp(ar, br),
         g: lerp(ag, bg),
         b: lerp(ab, bb),
+    }
+}
+
+// `is_multiple_of` is newer than our MSRV (1.85), so keep the modulo form.
+#[allow(clippy::manual_is_multiple_of)]
+fn format_count(value: usize) -> String {
+    let digits = value.to_string();
+    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
+    for (index, ch) in digits.chars().enumerate() {
+        if index > 0 && (digits.len() - index) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(ch);
+    }
+    out
+}
+
+fn format_duration(seconds: f64) -> String {
+    if seconds >= 3_600.0 {
+        format!("{:.2}h", seconds / 3_600.0)
+    } else if seconds >= 60.0 {
+        format!("{:.2}m", seconds / 60.0)
+    } else {
+        format!("{seconds:.1}s")
     }
 }
 

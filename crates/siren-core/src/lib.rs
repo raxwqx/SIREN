@@ -19,7 +19,9 @@ pub mod model;
 pub mod pcap;
 pub mod report;
 pub mod score;
+pub mod summary;
 pub mod time;
 
 pub use analyzer::{analyze, bucketize, AnalyzerConfig, Bucket};
 pub use model::{severity_for, DnsEvent, Features, Finding, Signal};
+pub use summary::{summarize, Count, Summary};

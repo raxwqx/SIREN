@@ -16,7 +16,8 @@
 proves how well it does.**
 
 [![CI](https://github.com/raxwqx/SIREN/actions/workflows/ci.yml/badge.svg)](https://github.com/raxwqx/SIREN/actions/workflows/ci.yml)
-![Rust](https://img.shields.io/badge/rust-1.75%2B-dea584?logo=rust&logoColor=white)
+![Version](https://img.shields.io/badge/version-0.2.0-ff4866)
+![Rust](https://img.shields.io/badge/rust-1.85%2B-dea584?logo=rust&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-2b2f3a)
 ![License](https://img.shields.io/badge/license-MIT-3da639)
 ![Precision](https://img.shields.io/badge/precision-0.99-ff4866)
@@ -49,6 +50,25 @@ SIREN is built the other way around:
 
 > ⚠️ SIREN is a detection and analysis tool. It does not sit inline and it does not
 > block traffic.
+
+---
+
+## 🆕 What's new in 0.2.0
+
+- 🧾 **`siren summary`** — inspect a capture before scoring it: clients,
+  domains, qnames, query types, response codes, time range, and top talkers.
+  Works with `--format json` for pipelines.
+- 🛡️ **Parser hardening** — legacy VLAN tags (`0x9100`/`0x9200`), zero IPv4
+  total lengths, malformed UDP lengths, unsupported link types, and reused DNS
+  transaction IDs are now handled correctly.
+- 🎯 **More honest NXDOMAIN scoring** — a single NXDOMAIN response can no longer
+  read as 100%; at least three correlated responses are required.
+- 🧪 **Numeric-only labels** such as `22222222` are no longer treated as
+  hex/base32 payloads.
+- ⚙️ Invalid `--window` values (0, negative, NaN, infinity) are rejected, and
+  the documented Rust requirement is now the real one: **1.85+**.
+
+See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
 ---
 
@@ -95,11 +115,80 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ---
 
+## 🧾 Capture summary
+
+Before scoring buckets, get a quick inventory of the capture:
+
+```bash
+siren summary capture.pcap --top 5
+```
+
+```text
+╭─ capture summary ──────────────────────────────────────────╮
+│ input             capture.pcap                             │
+│ queries           17,719                                   │
+│ responses         17,719                                   │
+│ clients           237                                      │
+│ domains           96                                       │
+│ qnames            10,047                                   │
+│ first seen        2023-11-14 22:13:20                      │
+│ last seen         2023-11-14 22:23:19                      │
+│ duration          10.00m                                   │
+╰────────────────────────────────────────────────────────────╯
+
+  top clients
+     COUNT  CLIENT
+       282  10.0.0.191
+       253  10.0.0.187
+
+  top domains
+     COUNT  DOMAIN
+       802  fastly.net
+       525  linkedin.com
+
+  query types
+     COUNT  QTYPE
+      8466  A
+      4237  AAAA
+      3769  TXT
+
+  response codes
+     COUNT  RCODE
+     14090  NOERROR
+      3629  NXDOMAIN
+```
+
+`--top` controls the client/domain lists (1–100). Query-type and response-code
+distributions are always complete. For automation:
+
+```bash
+siren summary capture.pcap --format json > summary.json
+```
+
+```json
+{
+  "queries": 17719,
+  "responses": 17719,
+  "clients": 237,
+  "domains": 96,
+  "unique_qnames": 10047,
+  "first_ts": 1700000000.0,
+  "last_ts": 1700000599.9376924,
+  "duration_seconds": 599.9376924037933,
+  "qtypes": [{"name": "A", "count": 8466}],
+  "rcodes": [{"name": "NOERROR", "count": 14090}],
+  "top_clients": [{"name": "10.0.0.191", "count": 282}],
+  "top_domains": [{"name": "fastly.net", "count": 802}]
+}
+```
+
+---
+
 ## 📦 Install
 
 ###  Requirements
 
-- 🦀 Rust **1.75+** (`rustup` recommended)
+- 🦀 Rust **1.85+** (`rustup` recommended)
 - 🪶 No libpcap, no Npcap, no root
 
 ### 🐧 Linux / macOS
@@ -147,23 +236,26 @@ cargo install siren-cli
 ## ⚡ Quick start
 
 ```bash
-# 1. analyze a capture
+# 1. see what is in the capture
+siren summary capture.pcap --top 10
+
+# 2. analyze a capture
 siren analyze capture.pcap
 
-# 2. narrower or wider time window
+# 3. narrower or wider time window
 siren analyze capture.pcap --window 300
 
-# 3. show the evidence behind every finding
+# 4. show the evidence behind every finding
 siren analyze capture.pcap --window 300 --explain
 
-# 4. machine-readable output
+# 5. machine-readable output
 siren analyze capture.pcap --format json  > findings.json
 siren analyze capture.pcap --format sarif > siren.sarif
 
-# 5. fail a CI job when something serious shows up
+# 6. fail a CI job when something serious shows up
 siren analyze capture.pcap --fail-on high
 
-# 6. reproduce the evaluation in this README
+# 7. reproduce the evaluation in this README
 siren gen --out data/eval.jsonl --seed 42
 siren eval data/eval.jsonl --window 300
 ```
@@ -203,6 +295,9 @@ siren eval data/eval.jsonl --window 300
 \* PCAPNG is detected and reported with a one-line conversion hint
 (`editcap -F pcap`). Native PCAPNG is on the roadmap.
 
+Before any of this, `siren summary` reports endpoints, domains, query types and
+response codes without scoring them.
+
 ### 🚦 Detection signals
 
 | 🔍 Signal | ⚖️ Weight | 🚦 Fires when | 🎯 MITRE ATT&CK |
@@ -210,7 +305,7 @@ siren eval data/eval.jsonl --window 300
 | `entropy` | 0.20 | mean label entropy **> 4.3 bits/char** | T1001 |
 | `label-length` | 0.16 | any label **> 20 chars** | T1071.004 |
 | `query-rate` | 0.18 | **> 0.3 q/s** to one domain | T1048 |
-| `nxdomain` | 0.11 | **> 25%** of answers are NXDOMAIN | T1568.002 |
+| `nxdomain` | 0.11 | **> 25%** of answers are NXDOMAIN, with ≥ 3 responses | T1568.002 |
 | `qtype` | 0.09 | **> 30%** of queries are TXT | T1071.004 |
 | `encoding` | 0.15 | **> 20%** of labels look hex/base32/base64 | T1001 |
 | `beaconing` | 0.07 | inter-arrival **CV < 0.35** with ≥ 6 queries | T1071.004 |
@@ -257,7 +352,7 @@ Reproduce it yourself; the generator is seeded and the numbers are stable.
 | JSONL, 5× dataset | 88,595 | 296 ms | ~299k events/s |
 
 Single core, no SIMD, no unsafe. PCAP parsing adds protocol parsing cost; the
-bottleneck is JSON deserialization, which is on the list for v0.2.
+bottleneck is still JSON deserialization, which is on the roadmap.
 
 ---
 
@@ -265,6 +360,7 @@ bottleneck is JSON deserialization, which is on the list for v0.2.
 
 ```text
 siren analyze <INPUT> [OPTIONS]
+siren summary <INPUT> [OPTIONS]
 siren gen     --out <PATH> [--seed N]
 siren eval    <INPUT> [OPTIONS]
 siren signals
@@ -283,6 +379,17 @@ siren signals
 | `--fail-on <low\|medium\|high\|critical>` | off | Exit `2` when matched |
 | `--no-banner` | off | Plain output |
 
+`--window` must be a finite number greater than zero; `--min-risk` is bounded to
+0–100.
+
+### `siren summary`
+
+| Option | Default | Description |
+|---|---|---|
+| `--top <N>` | `10` | Rows per client/domain list (1–100) |
+| `--format <table\|json>` | `table` | Output format |
+| `--no-banner` | off | Plain output |
+
 ### `siren eval`
 
 | Option | Default | Description |
@@ -298,8 +405,11 @@ siren signals
 ### PCAP
 
 Classic libpcap files (`0xa1b2c3d4`, microsecond or nanosecond).
-Supported link types: Ethernet (with 802.1Q/QinQ), raw IP, Linux SLL/SLL2.
-Ports 53/UDP only in v0.1.
+Supported link types: Ethernet (with 802.1Q/QinQ and legacy `0x9100`/`0x9200`
+tags), raw IP, Linux SLL/SLL2. Ports 53/UDP only. Unsupported link types fail
+with a clear error instead of silently producing an empty report.
+Malformed UDP length fields are rejected, and a zero IPv4 total length (seen
+with segmentation offload) falls back to the captured bytes.
 
 ### JSONL
 
@@ -367,7 +477,8 @@ sit inline and it does not block.
 No. Point it at a file. Live capture (roadmap) will need capture privileges.
 
 **Does it detect DNS over HTTPS?**
-Not yet. DoH analysis is v0.2 work; in v0.1, DoH simply does not appear as DNS.
+Not yet. DoH/DoT analysis is on the roadmap; DoH simply does not appear as DNS
+in a capture.
 
 **Why Rust and not Python?**
 One static binary, no interpreter, no dependency hell on Windows, and enough
@@ -401,6 +512,9 @@ cargo test --all
 
 PRs that add a detector must include a unit test and an entry in the signal
 table. PRs that change scoring must include before/after `siren eval` numbers.
+
+Security reports: see [`SECURITY.md`](SECURITY.md). Release history:
+[`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

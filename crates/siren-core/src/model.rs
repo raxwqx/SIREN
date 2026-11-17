@@ -63,6 +63,9 @@ pub struct Features {
     /// Mean Shannon entropy (bits/char) of the variable label.
     pub entropy: f64,
     pub unique_ratio: f64,
+    /// Number of queries with a matched response (`rcode` is known).
+    #[serde(default)]
+    pub responses: usize,
     pub nxdomain_ratio: f64,
     pub txt_ratio: f64,
     /// Share of variable labels that look hex / base32 / base64.
