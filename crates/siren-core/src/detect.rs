@@ -18,6 +18,8 @@ pub const ENTROPY_MIN: f64 = 4.3;
 pub const LABEL_LEN_MIN: usize = 20;
 pub const QPS_MIN: f64 = 0.3;
 pub const NXDOMAIN_MIN: f64 = 0.25;
+/// A single NXDOMAIN answer out of a hundred queries must not read as 100%.
+pub const NXDOMAIN_MIN_RESPONSES: usize = 3;
 pub const TXT_RATIO_MIN: f64 = 0.30;
 pub const ENCODING_MIN: f64 = 0.20;
 pub const BEACON_CV_MAX: f64 = 0.35;
@@ -133,7 +135,7 @@ fn query_rate(f: &Features) -> Option<Signal> {
 }
 
 fn nxdomain(f: &Features) -> Option<Signal> {
-    if f.nxdomain_ratio <= NXDOMAIN_MIN {
+    if f.responses < NXDOMAIN_MIN_RESPONSES || f.nxdomain_ratio <= NXDOMAIN_MIN {
         return None;
     }
     let score = ((f.nxdomain_ratio - NXDOMAIN_MIN) / 0.6).clamp(0.0, 1.0);
@@ -141,8 +143,9 @@ fn nxdomain(f: &Features) -> Option<Signal> {
         id: "nxdomain",
         score,
         detail: format!(
-            "{:.0}% NXDOMAIN responses (normal < {:.0}%)",
+            "{:.0}% NXDOMAIN across {} responses (normal < {:.0}%)",
             f.nxdomain_ratio * 100.0,
+            f.responses,
             NXDOMAIN_MIN * 100.0
         ),
     })
@@ -219,6 +222,7 @@ mod tests {
             mean_label_len: 8.0,
             entropy: 3.0,
             unique_ratio: 0.8,
+            responses: 10,
             nxdomain_ratio: 0.0,
             txt_ratio: 0.0,
             encoding_ratio: 0.0,
@@ -266,6 +270,16 @@ mod tests {
         f = base();
         f.fanout = 100;
         assert!((fanout)(&f).is_some());
+    }
+
+    #[test]
+    fn nxdomain_needs_more_than_one_answer() {
+        let mut f = base();
+        f.responses = 1;
+        f.nxdomain_ratio = 1.0;
+        assert!((nxdomain)(&f).is_none());
+        f.responses = NXDOMAIN_MIN_RESPONSES;
+        assert!((nxdomain)(&f).is_some());
     }
 
     #[test]

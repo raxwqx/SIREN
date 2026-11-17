@@ -16,7 +16,8 @@
 puanlar — sonra bunun ne kadar iyi çalıştığını kanıtlar.**
 
 [![CI](https://github.com/raxwqx/SIREN/actions/workflows/ci.yml/badge.svg)](https://github.com/raxwqx/SIREN/actions/workflows/ci.yml)
-![Rust](https://img.shields.io/badge/rust-1.75%2B-dea584?logo=rust&logoColor=white)
+![Version](https://img.shields.io/badge/version-0.2.0-ff4866)
+![Rust](https://img.shields.io/badge/rust-1.85%2B-dea584?logo=rust&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-2b2f3a)
 ![License](https://img.shields.io/badge/license-MIT-3da639)
 ![Precision](https://img.shields.io/badge/precision-0.99-ff4866)
@@ -49,6 +50,26 @@ SIREN bunun tersini yapar:
   yok, Npcap yok, root yok. Linux, Windows ve macOS'ta aynı çalışır.
 
 > ⚠️ SIREN bir tespit ve analiz aracıdır. Hattın üstünde durmaz, trafiği engellemez.
+
+---
+
+## 🆕 0.2.0'da yenilikler
+
+- 🧾 **`siren summary`** — puanlamadan önce yakalamaya göz at: istemciler, alan
+  adları, qname'ler, sorgu tipleri, yanıt kodları, zaman aralığı ve en çok
+  konuşanlar. Otomasyon için `--format json`.
+- 🛡️ **Ayrıştırıcı sağlamlaştırması** — eski VLAN etiketleri
+  (`0x9100`/`0x9200`), sıfır IPv4 toplam uzunluğu, bozuk UDP uzunlukları,
+  desteklenmeyen link tipleri ve yeniden kullanılan DNS işlem kimlikleri artık
+  doğru işleniyor.
+- 🎯 **Daha dürüst NXDOMAIN puanlaması** — tek bir NXDOMAIN yanıtı artık %100
+  sayılmıyor; en az üç eşleşmiş yanıt gerekiyor.
+- 🧪 **Yalnızca rakamlardan oluşan etiketler** (`22222222` gibi) artık
+  hex/base32 yükü sayılmıyor.
+- ⚙️ Geçersiz `--window` değerleri (0, negatif, NaN, sonsuz) reddediliyor ve
+  belgelenen Rust gereksinimi gerçek olanla eşleşiyor: **1.85+**.
+
+Tam liste için [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -94,11 +115,80 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ---
 
+## 🧾 Yakalama özeti
+
+Kovaları puanlamadan önce yakalamanın hızlı bir envanterini çıkar:
+
+```bash
+siren summary capture.pcap --top 5
+```
+
+```text
+╭─ capture summary ──────────────────────────────────────────╮
+│ input             capture.pcap                             │
+│ queries           17,719                                   │
+│ responses         17,719                                   │
+│ clients           237                                      │
+│ domains           96                                       │
+│ qnames            10,047                                   │
+│ first seen        2023-11-14 22:13:20                      │
+│ last seen         2023-11-14 22:23:19                      │
+│ duration          10.00m                                   │
+╰────────────────────────────────────────────────────────────╯
+
+  top clients
+     COUNT  CLIENT
+       282  10.0.0.191
+       253  10.0.0.187
+
+  top domains
+     COUNT  DOMAIN
+       802  fastly.net
+       525  linkedin.com
+
+  query types
+     COUNT  QTYPE
+      8466  A
+      4237  AAAA
+      3769  TXT
+
+  response codes
+     COUNT  RCODE
+     14090  NOERROR
+      3629  NXDOMAIN
+```
+
+`--top` istemci/alan adı listelerini kontrol eder (1–100). Sorgu tipi ve yanıt
+kodu dağılımları her zaman tamdır. Otomasyon için:
+
+```bash
+siren summary capture.pcap --format json > summary.json
+```
+
+```json
+{
+  "queries": 17719,
+  "responses": 17719,
+  "clients": 237,
+  "domains": 96,
+  "unique_qnames": 10047,
+  "first_ts": 1700000000.0,
+  "last_ts": 1700000599.9376924,
+  "duration_seconds": 599.9376924037933,
+  "qtypes": [{"name": "A", "count": 8466}],
+  "rcodes": [{"name": "NOERROR", "count": 14090}],
+  "top_clients": [{"name": "10.0.0.191", "count": 282}],
+  "top_domains": [{"name": "fastly.net", "count": 802}]
+}
+```
+
+---
+
 ## 📦 Kurulum
 
 ###  Gereksinimler
 
-- 🦀 Rust **1.75+** (`rustup` önerilir)
+- 🦀 Rust **1.85+** (`rustup` önerilir)
 - 🪶 libpcap yok, Npcap yok, root yok
 
 ### 🐧 Linux / macOS
@@ -140,23 +230,26 @@ siren --version
 ## ⚡ Hızlı başlangıç
 
 ```bash
-# 1. bir yakalamayı incele
+# 1. yakalamada ne olduğunu gör
+siren summary capture.pcap --top 10
+
+# 2. bir yakalamayı incele
 siren analyze capture.pcap
 
-# 2. dar veya geniş zaman penceresi
+# 3. dar veya geniş zaman penceresi
 siren analyze capture.pcap --window 300
 
-# 3. her bulgunun arkasındaki kanıtı göster
+# 4. her bulgunun arkasındaki kanıtı göster
 siren analyze capture.pcap --window 300 --explain
 
-# 4. makine tarafından okunabilir çıktı
+# 5. makine tarafından okunabilir çıktı
 siren analyze capture.pcap --format json  > findings.json
 siren analyze capture.pcap --format sarif > siren.sarif
 
-# 5. ciddi bir şey çıkınca CI işini düşür
+# 6. ciddi bir şey çıkınca CI işini düşür
 siren analyze capture.pcap --fail-on high
 
-# 6. bu README'deki değerlendirmeyi birebir üret
+# 7. bu README'deki değerlendirmeyi birebir üret
 siren gen --out data/eval.jsonl --seed 42
 siren eval data/eval.jsonl --window 300
 ```
@@ -196,6 +289,9 @@ siren eval data/eval.jsonl --window 300
 \* PCAPNG algılanır ve tek satırlık dönüştürme ipucuyla raporlanır
 (`editcap -F pcap`). Yerel PCAPNG desteği yol haritasında.
 
+Tüm bunlardan önce `siren summary` puanlama yapmadan istemcileri, alan adlarını,
+sorgu tiplerini ve yanıt kodlarını raporlar.
+
 ### 🚦 Tespit sinyalleri
 
 | 🔍 Sinyal | ⚖️ Ağırlık | 🚦 Ne zaman tetiklenir | 🎯 MITRE ATT&CK |
@@ -203,7 +299,7 @@ siren eval data/eval.jsonl --window 300
 | `entropy` | 0.20 | ortalama etiket entropisi **> 4.3 bit/karakter** | T1001 |
 | `label-length` | 0.16 | herhangi bir etiket **> 20 karakter** | T1071.004 |
 | `query-rate` | 0.18 | tek alan adına **> 0.3 sorgu/sn** | T1048 |
-| `nxdomain` | 0.11 | yanıtların **> %25**'i NXDOMAIN | T1568.002 |
+| `nxdomain` | 0.11 | yanıtların **> %25**'i NXDOMAIN, en az 3 yanıtla | T1568.002 |
 | `qtype` | 0.09 | sorguların **> %30**'u TXT | T1071.004 |
 | `encoding` | 0.15 | etiketlerin **> %20**'si hex/base32/base64 | T1001 |
 | `beaconing` | 0.07 | varış aralığı **CV < 0.35**, ≥ 6 sorgu | T1071.004 |
@@ -258,6 +354,7 @@ Tek çekirdek, SIMD yok, unsafe yok.
 
 ```text
 siren analyze <GİRDİ> [SEÇENEKLER]
+siren summary <GİRDİ> [SEÇENEKLER]
 siren gen     --out <YOL> [--seed N]
 siren eval    <GİRDİ> [SEÇENEKLER]
 siren signals
@@ -276,6 +373,16 @@ siren signals
 | `--fail-on <low\|medium\|high\|critical>` | kapalı | Eşleşince `2` ile çık |
 | `--no-banner` | kapalı | Sade çıktı |
 
+`--window` sonlu ve sıfırdan büyük olmalıdır; `--min-risk` 0–100 aralığındadır.
+
+### `siren summary`
+
+| Seçenek | Varsayılan | Açıklama |
+|---|---|---|
+| `--top <N>` | `10` | İstemci/alan adı listesi başına satır (1–100) |
+| `--format <table\|json>` | `table` | Çıktı biçimi |
+| `--no-banner` | kapalı | Sade çıktı |
+
 ### `siren eval`
 
 | Seçenek | Varsayılan | Açıklama |
@@ -291,8 +398,11 @@ siren signals
 ### PCAP
 
 Klasik libpcap dosyaları (`0xa1b2c3d4`, mikrosaniye veya nanosaniye).
-Desteklenen link tipleri: Ethernet (802.1Q/QinQ dahil), raw IP, Linux SLL/SLL2.
-v0.1'de yalnızca 53/UDP.
+Desteklenen link tipleri: Ethernet (802.1Q/QinQ ve eski `0x9100`/`0x9200`
+etiketleri dahil), raw IP, Linux SLL/SLL2. Yalnızca 53/UDP. Desteklenmeyen link
+tipleri sessizce boş rapor üretmek yerine açık hata verir. Bozuk UDP uzunluk
+alanları reddedilir; sıfır IPv4 toplam uzunluğu (segmentation offload) yakalanan
+baytlara geri düşer.
 
 ### JSONL
 
@@ -361,7 +471,8 @@ engellemez.
 Hayır. Dosyayı göster. Canlı yakalama (yol haritası) yakalama yetkisi ister.
 
 **DNS over HTTPS'i tespit ediyor mu?**
-Henüz değil. DoH analizi v0.2 işi; v0.1'de DoH DNS olarak görünmez.
+Henüz değil. DoH/DoT analizi yol haritasında; yakalamada DoH DNS olarak
+görünmez.
 
 **Neden Python değil Rust?**
 Tek statik binary, yorumlayıcı yok, Windows'ta bağımlılık cehennemi yok ve
@@ -395,6 +506,9 @@ cargo test --all
 
 Dedektör ekleyen PR'lar bir birim testi ve sinyal tablosuna giriş içermelidir.
 Puanlamayı değiştiren PR'lar öncesi/sonrası `siren eval` sayılarını içermelidir.
+
+Güvenlik bildirimleri: [`SECURITY.md`](SECURITY.md). Sürüm geçmişi:
+[`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

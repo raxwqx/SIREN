@@ -16,7 +16,7 @@
 доказывает, насколько хорошо это работает.**
 
 [![CI](https://github.com/raxwqx/SIREN/actions/workflows/ci.yml/badge.svg)](https://github.com/raxwqx/SIREN/actions/workflows/ci.yml)
-![Rust](https://img.shields.io/badge/rust-1.75%2B-dea584?logo=rust&logoColor=white)
+![Rust](https://img.shields.io/badge/rust-1.85%2B-dea584?logo=rust&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-2b2f3a)
 ![License](https://img.shields.io/badge/license-MIT-3da639)
 ![Precision](https://img.shields.io/badge/precision-0.99-ff4866)
@@ -99,7 +99,7 @@ $ siren analyze capture.pcap --window 300 --explain
 
 ###  Требования
 
-- 🦀 Rust **1.75+** (рекомендуется `rustup`)
+- 🦀 Rust **1.85+** (рекомендуется `rustup`)
 - 🪶 Без libpcap, без Npcap, без root
 
 ### 🐧 Linux / macOS

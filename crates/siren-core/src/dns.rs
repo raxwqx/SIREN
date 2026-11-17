@@ -69,7 +69,9 @@ fn link_layer(linktype: u32, frame: &[u8]) -> Option<(u16, &[u8])> {
             }
             let mut ethertype = u16::from_be_bytes([frame[12], frame[13]]);
             let mut off = 14;
-            while ethertype == 0x8100 || ethertype == 0x88a8 {
+            // 802.1Q, 802.1ad (QinQ) and the legacy 0x9100/0x9200 tags that
+            // still appear in captures from older switches.
+            while matches!(ethertype, 0x8100 | 0x88a8 | 0x9100 | 0x9200) {
                 if frame.len() < off + 4 {
                     return None;
                 }
@@ -110,7 +112,13 @@ fn ipv4(b: &[u8]) -> Option<(String, String, u8, &[u8])> {
     }
     let proto = b[9];
     let total = u16::from_be_bytes([b[2], b[3]]) as usize;
-    let end = total.min(b.len());
+    // A total length of 0 is what some capture stacks leave behind for
+    // segmentation offload; fall back to the bytes actually captured.
+    let end = if total == 0 {
+        b.len()
+    } else {
+        total.min(b.len())
+    };
     if end < ihl {
         return None;
     }
@@ -149,7 +157,14 @@ fn udp(b: &[u8]) -> Option<(u16, u16, &[u8])> {
     let sp = u16::from_be_bytes([b[0], b[1]]);
     let dp = u16::from_be_bytes([b[2], b[3]]);
     let len = u16::from_be_bytes([b[4], b[5]]) as usize;
-    let end = len.clamp(8, b.len());
+    // The UDP header is eight bytes; a smaller length field is malformed and
+    // must not silently turn into "use the rest of the buffer".
+    if len < 8 {
+        return None;
+    }
+    // Truncated captures are common (snaplen); trust the captured bytes but
+    // never read past them.
+    let end = len.min(b.len());
     Some((sp, dp, &b[8..end]))
 }
 
@@ -239,6 +254,61 @@ mod tests {
         b.extend_from_slice(&qtype.to_be_bytes());
         b.extend_from_slice(&[0, 1]);
         b
+    }
+
+    fn ipv4_udp(dns: &[u8], total: Option<u16>) -> Vec<u8> {
+        let udp_len = 8 + dns.len();
+        let ip_len = 20 + udp_len;
+        let mut b = Vec::new();
+        b.push(0x45);
+        b.push(0);
+        b.extend_from_slice(&total.unwrap_or(ip_len as u16).to_be_bytes());
+        b.extend_from_slice(&[0, 0, 0, 0]);
+        b.push(64);
+        b.push(17);
+        b.extend_from_slice(&[0, 0]);
+        b.extend_from_slice(&[10, 0, 0, 5]);
+        b.extend_from_slice(&[10, 0, 0, 1]);
+        b.extend_from_slice(&50000u16.to_be_bytes());
+        b.extend_from_slice(&53u16.to_be_bytes());
+        b.extend_from_slice(&(udp_len as u16).to_be_bytes());
+        b.extend_from_slice(&[0, 0]);
+        b.extend_from_slice(dns);
+        b
+    }
+
+    fn tagged_frame(vlan: u16, l3: &[u8]) -> Vec<u8> {
+        let mut frame = vec![0u8; 12];
+        frame.extend_from_slice(&vlan.to_be_bytes());
+        frame.extend_from_slice(&[0x00, 0x01]); // priority / VLAN id
+        frame.extend_from_slice(&[0x08, 0x00]); // IPv4
+        frame.extend_from_slice(l3);
+        frame
+    }
+
+    #[test]
+    fn parses_all_supported_vlan_tags() {
+        for vlan in [0x8100u16, 0x88a8, 0x9100, 0x9200] {
+            let frame = tagged_frame(vlan, &ipv4_udp(&query("a.example.com", 1), None));
+            let packet = extract(1, &frame).unwrap_or_else(|| panic!("VLAN {vlan:#06x} failed"));
+            assert_eq!(packet.qname, "a.example.com");
+        }
+    }
+
+    #[test]
+    fn falls_back_when_ipv4_total_length_is_zero() {
+        let frame = tagged_frame(0x8100, &ipv4_udp(&query("a.example.com", 1), Some(0)));
+        let packet = extract(1, &frame).unwrap();
+        assert_eq!(packet.qname, "a.example.com");
+    }
+
+    #[test]
+    fn rejects_udp_length_below_the_header() {
+        let mut datagram = vec![0u8; 16];
+        datagram[0..2].copy_from_slice(&50000u16.to_be_bytes());
+        datagram[2..4].copy_from_slice(&53u16.to_be_bytes());
+        datagram[4..6].copy_from_slice(&7u16.to_be_bytes());
+        assert!(udp(&datagram).is_none());
     }
 
     #[test]

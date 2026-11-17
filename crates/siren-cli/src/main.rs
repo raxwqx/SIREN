@@ -9,7 +9,7 @@ use clap::{Parser, Subcommand};
 use serde_json::json;
 use siren_core::analyzer::{analyze, bucketize, AnalyzerConfig};
 use siren_core::model::DnsEvent;
-use siren_core::{eval, gen, pcap, report};
+use siren_core::{eval, gen, pcap, report, summary};
 use ui::Ui;
 
 #[derive(Parser)]
@@ -64,6 +64,24 @@ enum Command {
         /// Exit with code 2 if a finding at or above this severity exists.
         #[arg(long, value_parser = ["low", "medium", "high", "critical"])]
         fail_on: Option<String>,
+    },
+
+    /// Summarize clients, domains, query types and response codes.
+    Summary {
+        /// Input .pcap or .jsonl file.
+        input: PathBuf,
+
+        /// Rows per endpoint list (clients and domains).
+        #[arg(long, default_value_t = 10)]
+        top: usize,
+
+        /// Output format.
+        #[arg(long, value_parser = ["table", "json"], default_value = "table")]
+        format: String,
+
+        /// Do not print the banner.
+        #[arg(long)]
+        no_banner: bool,
     },
 
     /// Generate a labeled synthetic dataset for evaluation.
@@ -137,6 +155,12 @@ fn main() -> ExitCode {
             no_banner,
             fail_on.as_deref(),
         ),
+        Command::Summary {
+            input,
+            top,
+            format,
+            no_banner,
+        } => run_summary(&input, top, &format, no_banner),
         Command::Gen { out, seed } => run_gen(&out, seed),
         Command::Eval {
             input,
@@ -172,6 +196,10 @@ fn run_analyze(
     no_banner: bool,
     fail_on: Option<&str>,
 ) -> Result<ExitCode, String> {
+    validate_window(window)?;
+    if min_risk > 100 {
+        return Err("--min-risk must be between 0 and 100".into());
+    }
     let events = load_events(input)?;
     let allowlist = match allowlist {
         Some(path) => load_allowlist(path)?,
@@ -246,6 +274,34 @@ fn run_analyze(
     Ok(ExitCode::SUCCESS)
 }
 
+fn run_summary(
+    input: &Path,
+    top: usize,
+    format: &str,
+    no_banner: bool,
+) -> Result<ExitCode, String> {
+    if !(1..=100).contains(&top) {
+        return Err("--top must be between 1 and 100".into());
+    }
+    let events = load_events(input)?;
+    let summary = summary::summarize(&events, top);
+
+    if format == "json" {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&summary).map_err(|e| e.to_string())?
+        );
+        return Ok(ExitCode::SUCCESS);
+    }
+
+    let ui = Ui::new();
+    if !no_banner {
+        ui.banner();
+    }
+    ui.summary(&input.display().to_string(), &summary);
+    Ok(ExitCode::SUCCESS)
+}
+
 fn run_gen(out: &Path, seed: u64) -> Result<ExitCode, String> {
     let events = gen::generate(seed);
     if let Some(parent) = out.parent() {
@@ -284,6 +340,7 @@ fn run_eval(
     json_output: bool,
     no_banner: bool,
 ) -> Result<ExitCode, String> {
+    validate_window(window)?;
     let events = load_events(input)?;
     let config = AnalyzerConfig {
         window,
@@ -366,7 +423,11 @@ fn run_signals(no_banner: bool) {
 
 fn load_events(path: &Path) -> Result<Vec<DnsEvent>, String> {
     if pcap::is_pcap(path) {
-        return pcap::events(path);
+        let events = pcap::events(path)?;
+        if events.is_empty() {
+            return Err(format!("{}: no DNS events found", path.display()));
+        }
+        return Ok(events);
     }
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let mut events = Vec::new();
@@ -395,11 +456,22 @@ fn load_allowlist(path: &Path) -> Result<Vec<String>, String> {
         .collect())
 }
 
+fn validate_window(window: f64) -> Result<(), String> {
+    if !window.is_finite() || window <= 0.0 {
+        return Err(format!(
+            "--window must be a finite positive number of seconds, got {window}"
+        ));
+    }
+    Ok(())
+}
+
+// `is_multiple_of` is newer than our MSRV (1.85), so keep the modulo form.
+#[allow(clippy::manual_is_multiple_of)]
 fn format_number(value: usize) -> String {
     let digits = value.to_string();
     let mut out = String::new();
     for (index, ch) in digits.chars().enumerate() {
-        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+        if index > 0 && (digits.len() - index) % 3 == 0 {
             out.push(',');
         }
         out.push(ch);

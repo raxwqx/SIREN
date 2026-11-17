@@ -359,7 +359,7 @@ dependencies = [
 
 [[package]]
 name = "siren-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
  "crossterm",
@@ -371,7 +371,7 @@ dependencies = [
 
 [[package]]
 name = "siren-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
